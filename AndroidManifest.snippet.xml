@@ -1,0 +1,50 @@
+<!-- À FUSIONNER dans app/src/main/AndroidManifest.xml (ne pas remplacer le fichier entier) -->
+
+<!-- 1) Avant <application> : -->
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+<uses-permission android:name="android.permission.READ_CONTACTS" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+<!-- Nécessaire depuis Android 11 pour trouver la reconnaissance et la synthèse vocales -->
+<queries>
+    <intent><action android:name="android.speech.RecognitionService" /></intent>
+    <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
+</queries>
+
+<!-- 2) Dans la balise <application>, remplacez android:label par : android:label="Jarvis" -->
+
+<!-- 3) Dans <application>, à côté de MainActivity : -->
+<service
+    android:name=".JarvisService"
+    android:exported="false"
+    android:foregroundServiceType="microphone" />
+
+<service
+    android:name=".MessageWatcher"
+    android:exported="true"
+    android:label="Jarvis"
+    android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+    <intent-filter>
+        <action android:name="android.service.notification.NotificationListenerService" />
+    </intent-filter>
+</service>
+
+<service
+    android:name=".CallScreener"
+    android:exported="true"
+    android:permission="android.permission.BIND_SCREENING_SERVICE">
+    <intent-filter>
+        <action android:name="android.telecom.CallScreeningService" />
+    </intent-filter>
+</service>
+
+<receiver android:name=".SendReplyReceiver" android:exported="false" />
+
+<receiver android:name=".BatteryReceiver" android:exported="true">
+    <intent-filter>
+        <action android:name="android.intent.action.BATTERY_LOW" />
+    </intent-filter>
+</receiver>

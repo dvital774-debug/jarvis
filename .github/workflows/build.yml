@@ -1,1 +1,74 @@
-
+name: Build Jarvis APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Assembler le projet Android a partir des fichiers
+        run: |
+          mkdir -p app/src/main/java/com/example/monagent
+          cp *.java app/src/main/java/com/example/monagent/
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+            repositories { google(); mavenCentral(); gradlePluginPortal() }
+          }
+          dependencyResolutionManagement {
+            repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "Jarvis"
+          include ':app'
+          EOF
+          cat > build.gradle <<'EOF'
+          plugins {
+            id 'com.android.application' version '8.5.2' apply false
+          }
+          cat
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx2g
+          EOF
+          cat > app/build.gradle <<'EOF'
+          plugins {
+            id 'com.android.application'
+          }
+          android {
+            namespace 'com.example.monagent'
+            compileSdk 34
+            defaultConfig {
+              applicationId 'com.example.monagent'
+              minSdk 29
+              targetSdk 34
+              versionCode 1
+              versionName '1.0'
+            }
+            compileOptions {
+              sourceCompatibility JavaVersion.VERSION_17
+              targetCompatibility JavaVersion.VERSION_17
+            }
+          }
+          EOF
+      - name: Compiler l'APK
+        run: gradle :app:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+      - name: Publier l'APK dans les Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Jarvis (derniere version)
+          files: app/build/outputs/apk/debug/app-debug.apk
